@@ -1,0 +1,10 @@
+[package]
+name = "sdr"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nusb = "0.1"
+pollster = "0.4"
+sgp4 = "2"
+chrono = "0.4"

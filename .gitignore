@@ -1,0 +1,9 @@
+target/
+passages/
+captures/
+*.bmp
+noaa.wav
+fm.wav
+noaa.bmp
+meteo/*/target/
+meteo/*.bmp
