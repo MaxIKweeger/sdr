@@ -28,9 +28,9 @@ Une interface web Rust/WASM (Leptos + Axum) est accessible depuis n'importe quel
 | Connexion | Adresse |
 |-----------|---------|
 | Câble (réseau local) | http://192.168.1.123:8080 |
-| WiFi hotspot « SDR-Station » | http://192.168.2.22:8080 |
+| WiFi hotspot « SDR-Station » | http://192.168.2.222:8080 |
 
-**Se connecter via le hotspot** : WiFi → réseau **SDR-Station** → mot de passe **darty92220** → ouvrir http://192.168.2.22:8080
+**Se connecter via le hotspot** : WiFi → réseau **SDR-Station** → mot de passe **darty92220** → ouvrir http://192.168.2.222:8080
 
 L'interface affiche :
 - Statut GPS (coordonnées en temps réel quand fix)
@@ -72,13 +72,13 @@ u-blox VK-172 sur `/dev/ttyACM0`) au lancement des modes `passes` et `auto`.
 | Interface | Mode | Adresse | Usage |
 |-----------|------|---------|-------|
 | eth0 | filaire (IP fixe) | 192.168.1.123 | Connexion à la box / internet |
-| wlan0 | Hotspot WiFi AP | 192.168.2.22 | Accès direct sans box (terrain) |
+| wlan0 | Hotspot WiFi AP | 192.168.2.222 | Accès direct sans box (terrain) |
 
 - **Câble** : connecte le Pi à la box → internet disponible, IP fixe `192.168.1.123`.
 - **Hotspot** : SSID `SDR-Station`, canal 6 (2.4 GHz), WPA2, mot de passe `darty92220`.
   Les clients reçoivent une IP en `192.168.2.x` via DHCP et accèdent à l'interface web.
 - Les deux interfaces fonctionnent **simultanément**.
-- SSH : `ssh hugues@192.168.1.123` (câble) ou `ssh hugues@192.168.2.22` (WiFi hotspot).
+- SSH : `ssh hugues@192.168.1.123` (câble) ou `ssh hugues@192.168.2.222` (WiFi hotspot).
 
 ## Fonctionnement HORS-LIGNE
 
