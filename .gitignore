@@ -7,3 +7,5 @@ fm.wav
 noaa.bmp
 meteo/*/target/
 meteo/*.bmp
+meteo/*/baseband.cu8
+meteo/**/*.cu8
