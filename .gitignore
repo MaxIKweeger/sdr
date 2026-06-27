@@ -9,3 +9,4 @@ meteo/*/target/
 meteo/*.bmp
 meteo/*/baseband.cu8
 meteo/**/*.cu8
+web/frontend/dist/
