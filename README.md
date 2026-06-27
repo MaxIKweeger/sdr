@@ -21,6 +21,26 @@ La position vient du GPS, l'heure/les orbites se gèrent toutes seules.
 
 Tout ce qui suit est **optionnel** (autres modes, réglages avancés).
 
+## Interface web
+
+Une interface web Rust/WASM (Leptos + Axum) est accessible depuis n'importe quel navigateur :
+
+| Connexion | Adresse |
+|-----------|---------|
+| Câble (réseau local) | http://192.168.1.123:8080 |
+| WiFi hotspot « SDR-Station » | http://192.168.2.22:8080 |
+
+**Se connecter via le hotspot** : WiFi → réseau **SDR-Station** → mot de passe **darty92220** → ouvrir http://192.168.2.22:8080
+
+L'interface affiche :
+- Statut GPS (coordonnées en temps réel quand fix)
+- Prochain passage satellite (nom, heure, élévation, fréquence)
+- Planning 48 h de tous les passages NOAA/Meteor
+- Galerie des images capturées avec lightbox
+
+Le serveur web (`sdr-web.service`) démarre automatiquement au boot.
+Sources dans `web/` (workspace Cargo séparé : backend Axum + frontend Leptos WASM).
+
 ## Lancer
 
 ```bash
@@ -47,45 +67,59 @@ u-blox VK-172 sur `/dev/ttyACM0`) au lancement des modes `passes` et `auto`.
 - Si aucun GPS n'est branché / pas de fix : repli sur **Bagneux** par défaut.
 - Périphérique surchargeable : `SDR_GPS=/dev/ttyACM1 ./target/release/sdr passes`.
 
-## Réseau / internet
+## Réseau
 
-- **eth0** (filaire) : connexion prioritaire (route metric 100).
-- **wlan0** : client WiFi du téléphone — SSID `Thorgal`, auto-connexion (metric 600 = secours).
-  → internet via le filaire s'il est là, sinon via le téléphone, automatiquement.
-- Gérer le WiFi : `nmcli connection up Thorgal` / `nmcli device status`.
-- (L'ancien point d'accès « ProxyPhone » a été désactivé ; sauvegardes en `*.ap-bak`/`*.disabled`.)
+| Interface | Mode | Adresse | Usage |
+|-----------|------|---------|-------|
+| eth0 | filaire (IP fixe) | 192.168.1.123 | Connexion à la box / internet |
+| wlan0 | Hotspot WiFi AP | 192.168.2.22 | Accès direct sans box (terrain) |
+
+- **Câble** : connecte le Pi à la box → internet disponible, IP fixe `192.168.1.123`.
+- **Hotspot** : SSID `SDR-Station`, canal 6 (2.4 GHz), WPA2, mot de passe `darty92220`.
+  Les clients reçoivent une IP en `192.168.2.x` via DHCP et accèdent à l'interface web.
+- Les deux interfaces fonctionnent **simultanément**.
+- SSH : `ssh hugues@192.168.1.123` (câble) ou `ssh hugues@192.168.2.22` (WiFi hotspot).
 
 ## Fonctionnement HORS-LIGNE
 
 - **TLE** (`tle_cache/`) : lancer `./target/release/sdr passes` UNE FOIS avec internet
   avant de partir (orbites valables ~1-2 semaines). Hors-ligne → repli auto sur ce cache.
-  (Astuce : active le partage de connexion du téléphone pour rafraîchir les TLE sur le terrain.)
 - **Position** : fournie par le GPS, aucune connexion requise.
+- **Interface web** : fonctionne hors-ligne via le hotspot SDR-Station.
 
 ## Antenne (dipôle V, satellites 137 MHz)
 
 - 2 brins de **~52 cm** chacun, à plat (horizontaux), angle **~120°**, plan orienté **Nord-Sud**.
 - Vue dégagée sur le ciel (dehors / point haut). Viser les passages d'élévation > 30-40°.
 
-## Service autonome (démarrage au boot)
+## Services systemd
 
-Le service systemd `sdr.service` lance `sdr auto` au démarrage.
-```bash
-sudo systemctl start|stop|status sdr     # gérer
-journalctl -u sdr -f                      # suivre les logs
-```
-⚠️ Le service monopolise la clé SDR : pour un usage manuel, d'abord `sudo systemctl stop sdr`.
+| Service | Rôle | Commande |
+|---------|------|----------|
+| `sdr.service` | Capture automatique (`sdr auto`) | `sudo systemctl start\|stop\|status sdr` |
+| `sdr-web.service` | Interface web port 8080 | `sudo systemctl start\|stop\|status sdr-web` |
+| `gpsd.service` | Démon GPS (/dev/ttyACM0) | `sudo systemctl start\|stop\|status gpsd` |
 
-## Matériel / système (configuré le 2026-06-21)
+⚠️ `sdr.service` monopolise la clé SDR : pour un usage manuel, d'abord `sudo systemctl stop sdr`.
 
-- Raspberry Pi 5 8 Go, Debian 13 trixie (aarch64).
+Logs en direct : `journalctl -u sdr -f` / `journalctl -u sdr-web -f`
+
+## Matériel / système
+
+- Raspberry Pi 5 8 Go, Debian 13 trixie (aarch64), boot sur NVMe SSD (adaptateur PCIe).
+- Clé SDR : Nooelec NESDR SMArt v5 (RTL2832U, 0x0bda).
+- GPS : u-blox VK-172 sur /dev/ttyACM0, géré par gpsd.
+- SatDump 1.2.2 compilé depuis les sources → `/usr/bin/satdump`.
 - Driver TV noyau blacklisté ; accès USB via `plugdev` ; accès série GPS via `dialout`.
-- SatDump 1.2.2 compilé depuis les sources → `/usr/bin/satdump` (sources dans `~/SatDump`).
-- Réseau : eth0 filaire (prioritaire) + wlan0 client WiFi du tél « Thorgal » (secours). Voir section Réseau.
 
 ## Recompiler après modif des sources
 
 ```bash
 source ~/.cargo/env
+# Programme SDR principal
 cd /home/hugues/sdr && cargo build --release
+# Interface web (backend)
+cd /home/hugues/sdr/web && cargo build -p backend --release
+# Interface web (frontend WASM)
+cd /home/hugues/sdr/web/frontend && trunk build --release
 ```
